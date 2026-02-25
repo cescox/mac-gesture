@@ -1,6 +1,7 @@
 import Cocoa
 import Foundation
 import Carbon.HIToolbox
+import ServiceManagement
 
 // ============================================================================
 // MARK: - MultitouchSupport Framework Bridge
@@ -582,6 +583,65 @@ func openAccessibilitySettings() {
 private let kBuyMeACoffeeURL = "https://www.buymeacoffee.com/is.harshul"
 
 // ============================================================================
+// MARK: - Login Item Management
+// ============================================================================
+
+func setupLoginItem() {
+    if #available(macOS 13.0, *) {
+        let service = SMAppService.mainApp
+        let status = service.status
+        
+        switch status {
+        case .notRegistered:
+            do {
+                try service.register()
+                print("✅ Login item registered successfully")
+            } catch {
+                print("⚠️  Failed to register login item: \(error.localizedDescription)")
+            }
+        case .enabled:
+            print("✅ Login item already enabled")
+        case .requiresApproval:
+            print("⚠️  Login item requires user approval in System Settings")
+        case .notFound:
+            print("❌ Login item service not found")
+        @unknown default:
+            print("⚠️  Unknown login item status")
+        }
+    } else {
+        print("⚠️  Login item management requires macOS 13.0+")
+    }
+}
+
+func isLoginItemEnabled() -> Bool {
+    if #available(macOS 13.0, *) {
+        return SMAppService.mainApp.status == .enabled
+    }
+    return false
+}
+
+func setLoginItem(_ enabled: Bool) {
+    if #available(macOS 13.0, *) {
+        let service = SMAppService.mainApp
+        do {
+            if enabled {
+                if service.status != .enabled {
+                    try service.register()
+                    print("✅ Login item enabled")
+                }
+            } else {
+                if service.status == .enabled {
+                    try service.unregister()
+                    print("✅ Login item disabled")
+                }
+            }
+        } catch {
+            print("❌ Failed to toggle login item: \(error.localizedDescription)")
+        }
+    }
+}
+
+// ============================================================================
 // MARK: - Popover Content ViewController
 // ============================================================================
 
@@ -646,6 +706,15 @@ class GesturePopoverVC: NSViewController {
         debugBtn.frame.origin = CGPoint(x: padH, y: y)
         view.addSubview(debugBtn)
         y += 22
+        
+        // Open at Login toggle (macOS 13.0+)
+        if #available(macOS 13.0, *) {
+            let loginBtn = makeCheckbox("Open at Login", checked: isLoginItemEnabled(), action: #selector(appDelegate?.toggleLoginItem))
+            loginBtn.target = appDelegate
+            loginBtn.frame.origin = CGPoint(x: padH, y: y)
+            view.addSubview(loginBtn)
+            y += 22
+        }
 
         let restartBtn = makeLink("Restart Touch Detection", action: #selector(appDelegate?.doRestart))
         restartBtn.target = appDelegate
@@ -1084,6 +1153,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("========================================")
 
         loadPreferences()
+        
+        // Enable login item by default (macOS 13.0+)
+        setupLoginItem()
 
         // Check accessibility (with prompt on first launch)
         let granted = checkAccessibilityWithPrompt()
@@ -1195,6 +1267,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func toggleDebug(_ sender: NSButton) {
         debugMode = (sender.state == .on)
         if debugMode { print("🔍 Debug ON — tap the trackpad to see events") }
+    }
+    
+    @objc func toggleLoginItem(_ sender: NSButton) {
+        let enabled = (sender.state == .on)
+        setLoginItem(enabled)
     }
 
     @objc func durationChanged(_ sender: NSPopUpButton) {

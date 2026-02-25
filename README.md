@@ -102,7 +102,11 @@ On first launch, grant Accessibility access:
 
 > Mac Gesture uses `CGEvent` to simulate mouse/keyboard events. It has zero network access and never collects any data.
 
-### Start at Login
+### Open at Login
+
+**Enabled by default (macOS 13.0+)**. MacGesture automatically registers itself to launch at login on first run. You can toggle this in the menu bar settings.
+
+For manual setup on older systems:
 
 `System Settings → General → Login Items → + → MacGesture`
 
@@ -143,6 +147,7 @@ Click the trackpad icon in the menu bar. You'll see three independently configur
 ├─────────────────────────────┤
 │ Test 4-Finger Action (2s)   │
 │ Restart Touch Detection     │
+│ ☑ Open at Login             │
 │ Debug Logging               │
 ├─────────────────────────────┤
 │ Version 3.0                 │

@@ -87,6 +87,7 @@ swiftc \
     -framework Cocoa \
     -framework ApplicationServices \
     -framework Carbon \
+    -framework ServiceManagement \
     -o "${MACOS}/${APP_NAME}" \
     Sources/main.swift
 
